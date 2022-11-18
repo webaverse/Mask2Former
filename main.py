@@ -22,7 +22,7 @@ from flask import Flask, Response, request
 app = Flask(__name__)
 
 
-@app.route('/predict', methods=['GET', 'OPTIONS'])
+@app.route('/predict', methods=['POST'])
 def predict():
     body = request.get_data()
     im = cv2.imdecode(np.frombuffer(body, np.uint8), cv2.IMREAD_COLOR)
