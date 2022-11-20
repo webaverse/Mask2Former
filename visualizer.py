@@ -433,7 +433,7 @@ class Visualizer:
         )
         return self.output
 
-    def draw_sem_seg(self, sem_seg, area_threshold=None, alpha=0.8):
+    def draw_sem_seg(self, sem_seg, area_threshold=None, alpha=1.0):
         """
         Draw semantic segmentation predictions/labels.
 
