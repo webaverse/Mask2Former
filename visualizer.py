@@ -433,7 +433,7 @@ class Visualizer:
         )
         return self.output
 
-    def draw_sem_seg(self, sem_seg, area_threshold=None, alpha=1.0):
+    def draw_sem_seg(self, sem_seg, area_threshold=None, alpha=1.0, line_width=0.0):
         """
         Draw semantic segmentation predictions/labels.
 
@@ -451,11 +451,18 @@ class Visualizer:
         labels, areas = np.unique(sem_seg, return_counts=True)
         sorted_idxs = np.argsort(-areas).tolist()
         labels = labels[sorted_idxs]
+        colorIndex = 0
         for label in filter(lambda l: l < len(self.metadata.stuff_classes), labels):
-            try:
-                mask_color = [x / 255 for x in self.metadata.stuff_colors[label]]
-            except (AttributeError, IndexError):
-                mask_color = None
+            # try:
+            #     mask_color = [x / 255 for x in self.metadata.stuff_colors[label]]
+            # except (AttributeError, IndexError):
+            #     mask_color = None
+
+            # encode the colorIndex as a matplotlib color (r, g, b)
+            r = (colorIndex & 0x00FF0000) >> 16
+            g = (colorIndex & 0x0000FF00) >> 8
+            b = (colorIndex & 0x000000FF) >> 0
+            mask_color = (r / 255, g / 255, b / 255)
 
             binary_mask = (sem_seg == label).astype(np.uint8)
             text = self.metadata.stuff_classes[label]
@@ -465,8 +472,10 @@ class Visualizer:
                 edge_color=_OFF_WHITE,
                 text=text,
                 alpha=alpha,
+                line_width=line_width,
                 area_threshold=area_threshold,
             )
+            colorIndex += 1
         return self.output
 
     def draw_panoptic_seg(self, panoptic_seg, segments_info, area_threshold=None, alpha=0.7):
@@ -1033,7 +1042,7 @@ class Visualizer:
         return self.output
 
     def draw_binary_mask(
-        self, binary_mask, color=None, *, edge_color=None, text=None, alpha=0.5, area_threshold=10
+        self, binary_mask, color=None, *, edge_color=None, text=None, alpha=0.5, area_threshold=10, line_width=0.0
     ):
         """
         Args:
@@ -1068,7 +1077,7 @@ class Visualizer:
                     continue
                 has_valid_segment = True
                 segment = segment.reshape(-1, 2)
-                self.draw_polygon(segment, color=color, edge_color=edge_color, alpha=alpha)
+                self.draw_polygon(segment, color=color, edge_color=edge_color, alpha=alpha, line_width=line_width)
         else:
             # TODO: Use Path/PathPatch to draw vector graphics:
             # https://stackoverflow.com/questions/8919719/how-to-plot-a-complex-polygon
@@ -1111,7 +1120,7 @@ class Visualizer:
             self._draw_text_in_mask(binary_mask, text, lighter_color)
         return self.output
 
-    def draw_polygon(self, segment, color, edge_color=None, alpha=0.5):
+    def draw_polygon(self, segment, color, edge_color=None, alpha=0.5, line_width=0.0):
         """
         Args:
             segment: numpy array of shape Nx2, containing all the points in the polygon.
@@ -1138,7 +1147,8 @@ class Visualizer:
             fill=True,
             facecolor=mplc.to_rgb(color) + (alpha,),
             edgecolor=edge_color,
-            linewidth=max(self._default_font_size // 15 * self.output.scale, 1),
+            # linewidth=max(self._default_font_size // 15 * self.output.scale, 1),
+            linewidth=line_width
         )
         self.output.ax.add_patch(polygon)
         return self.output
