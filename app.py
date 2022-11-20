@@ -28,57 +28,57 @@ from flask import Flask, Response, request
 app = Flask(__name__)
 
 
+cfg = get_cfg()
+cfg.MODEL.DEVICE='cpu'
+add_deeplab_config(cfg)
+add_maskformer2_config(cfg)
+cfg.merge_from_file("configs/coco/panoptic-segmentation/swin/maskformer2_swin_large_IN21k_384_bs16_100ep.yaml")
+cfg.MODEL.WEIGHTS = 'model_final_f07440.pkl'
+cfg.MODEL.MASK_FORMER.TEST.SEMANTIC_ON = True
+cfg.MODEL.MASK_FORMER.TEST.INSTANCE_ON = True
+cfg.MODEL.MASK_FORMER.TEST.PANOPTIC_ON = True
+predictor = DefaultPredictor(cfg)
+
 @app.route('/predict', methods=['POST', 'OPTIONS'])
 def inference():
-	if (request.method == 'OPTIONS'):
-		print('got options 1')
-		response = Response()
-		response.headers['Access-Control-Allow-Origin'] = '*'
-		response.headers['Access-Control-Allow-Headers'] = '*'
-		response.headers['Access-Control-Allow-Methods'] = '*'
-		response.headers['Access-Control-Expose-Headers'] = '*'
-		response.headers['Cross-Origin-Opener-Policy'] = 'same-origin'
-		response.headers['Cross-Origin-Embedder-Policy'] = 'require-corp'
-		response.headers['Cross-Origin-Resource-Policy'] = 'cross-origin'
-		print('got options 2')
-		return response
+    if (request.method == 'OPTIONS'):
+        print('got options 1')
+        response = Response()
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Headers'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = '*'
+        response.headers['Access-Control-Expose-Headers'] = '*'
+        response.headers['Cross-Origin-Opener-Policy'] = 'same-origin'
+        response.headers['Cross-Origin-Embedder-Policy'] = 'require-corp'
+        response.headers['Cross-Origin-Resource-Policy'] = 'cross-origin'
+        print('got options 2')
+        return response
 
-	# im = cv2.imread(str('desert.png'))
-	body = request.get_data()
-	im = cv2.imdecode(np.frombuffer(body, np.uint8), cv2.IMREAD_COLOR)
-	im = imutils.resize(im, width=512)
-	outputs = predictor(im)
-	v = Visualizer(im[:, :, ::-1], coco_metadata, scale=1.2, instance_mode=ColorMode.IMAGE_BW)
-	semantic_result, bboxes = v.draw_sem_seg(outputs["sem_seg"].argmax(0).to("cpu"))
+    # im = cv2.imread(str('desert.png'))
+    body = request.get_data()
+    im = cv2.imdecode(np.frombuffer(body, np.uint8), cv2.IMREAD_COLOR)
+    im = imutils.resize(im, width=512)
+    outputs = predictor(im)
+    v = Visualizer(im[:, :, ::-1], coco_metadata, scale=1.2, instance_mode=ColorMode.IMAGE_BW)
+    semantic_result, bboxes = v.draw_sem_seg(outputs["sem_seg"].argmax(0).to("cpu"))
 
-	sem_seg = Image.fromarray(np.uint8(semantic_result.get_image())).convert('RGB')
-	sem_seg.save('r3.png')
+    sem_seg = Image.fromarray(np.uint8(semantic_result.get_image())).convert('RGB')
+    sem_seg.save('r3.png')
 
-	segment_mask_img = cv2.imencode('.png', semantic_result.get_image())[1].tobytes()
+    segment_mask_img = cv2.imencode('.png', semantic_result.get_image())[1].tobytes()
 
-	response = Response(segment_mask_img)
-	response.headers['Content-Type'] = 'image/png'
-	response.headers['Access-Control-Allow-Origin'] = '*'
-	response.headers['Access-Control-Allow-Headers'] = '*'
-	response.headers['Access-Control-Allow-Methods'] = '*'
-	response.headers['Access-Control-Expose-Headers'] = '*'
-	response.headers['Cross-Origin-Opener-Policy'] = 'same-origin'
-	response.headers['Cross-Origin-Embedder-Policy'] = 'require-corp'
-	response.headers['Cross-Origin-Resource-Policy'] = 'cross-origin'
-	response.headers['X-Bounding-Boxes'] = json.dumps(bboxes)
-	return response
+    response = Response(segment_mask_img)
+    response.headers['Content-Type'] = 'image/png'
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Headers'] = '*'
+    response.headers['Access-Control-Allow-Methods'] = '*'
+    response.headers['Access-Control-Expose-Headers'] = '*'
+    response.headers['Cross-Origin-Opener-Policy'] = 'same-origin'
+    response.headers['Cross-Origin-Embedder-Policy'] = 'require-corp'
+    response.headers['Cross-Origin-Resource-Policy'] = 'cross-origin'
+    response.headers['X-Bounding-Boxes'] = json.dumps(bboxes)
+    return response
 
 
 if __name__ == '__main__':
-	cfg = get_cfg()
-	cfg.MODEL.DEVICE='cpu'
-	add_deeplab_config(cfg)
-	add_maskformer2_config(cfg)
-	cfg.merge_from_file("configs/coco/panoptic-segmentation/swin/maskformer2_swin_large_IN21k_384_bs16_100ep.yaml")
-	cfg.MODEL.WEIGHTS = 'model_final_f07440.pkl'
-	cfg.MODEL.MASK_FORMER.TEST.SEMANTIC_ON = True
-	cfg.MODEL.MASK_FORMER.TEST.INSTANCE_ON = True
-	cfg.MODEL.MASK_FORMER.TEST.PANOPTIC_ON = True
-	predictor = DefaultPredictor(cfg)
-
-	app.run(host='0.0.0.0', port=8080, threaded=True)
+    app.run(host='0.0.0.0', port=8080, threaded=True)
