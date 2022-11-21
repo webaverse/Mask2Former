@@ -147,7 +147,9 @@ def inference():
     # encode the segment mask into a png, the rgb values storing the class index out of 255
     segment_mask_img = cv2.imencode('.png', pred_mask.numpy())[1].tobytes()
 
-    sem_seg = pred_mask;
+    sem_seg = pred_mask
+
+
 
 
 
@@ -161,21 +163,38 @@ def inference():
     labels, areas = np.unique(sem_seg, return_counts=True)
     sorted_idxs = np.argsort(-areas).tolist()
     labels = labels[sorted_idxs]
-    colorIndex = 0
     for label in filter(lambda l: l < len(coco_metadata.stuff_classes), labels):
         binary_mask = (sem_seg == label).astype(np.uint8)
         text = coco_metadata.stuff_classes[label]
 
-        bboxes = detect_bounding_boxes(binary_mask, 64)
-        # print(f'got bounding boxes: {i} {len(bboxes)}')
-        index = int(label)
-        bounding_boxes.append({
-            'index': index,
-            'label': text,
-            'bbox': bboxes
-        })
 
 
+
+        # TODO sometimes drawn on wrong objects. the heuristics here can improve.
+        _num_cc, cc_labels, stats, centroids = cv2.connectedComponentsWithStats(binary_mask, 8)
+        if stats[1:, -1].size == 0:
+            continue
+
+        # draw text on the largest component, as well as other very large components.
+        for cid in range(1, _num_cc):
+            left = stats[cid, cv2.CC_STAT_LEFT]
+            top = stats[cid, cv2.CC_STAT_TOP]
+            width = stats[cid, cv2.CC_STAT_WIDTH]
+            height = stats[cid, cv2.CC_STAT_HEIGHT]
+
+            left = int(left)
+            top = int(top)
+            width = int(width)
+            height = int(height)
+
+            index = int(label)
+
+            bounding_boxes.append({
+                'index': index,
+                'label': text,
+                'bbox': [left, top, left + width, top + height],
+            })
+            
 
 
 
