@@ -194,8 +194,13 @@ class MaskFormer(nn.Module):
         images = [(x - self.pixel_mean) / self.pixel_std for x in images]
         images = ImageList.from_tensors(images, self.size_divisibility)
 
+        ts1 = time.time()
         features = self.backbone(images.tensor)
+        ts2 = time.time()
         outputs = self.sem_seg_head(features)
+        ts3 = time.time()
+        print('model A time: ', ts2 - ts1, file=sys.stderr)
+        print('model B time: ', ts3 - ts2, file=sys.stderr)
 
         if self.training:
             # mask classification target
@@ -251,8 +256,11 @@ class MaskFormer(nn.Module):
 
                 # panoptic segmentation inference
                 if self.panoptic_on:
+                    ts1 = time.time()
                     panoptic_r = retry_if_cuda_oom(self.panoptic_inference)(mask_cls_result, mask_pred_result)
                     processed_results[-1]["panoptic_seg"] = panoptic_r
+                    ts2 = time.time()
+                    print('segmentation time: ', ts2 - ts1, file=sys.stderr)
                 
                 # instance segmentation inference
                 if self.instance_on:
