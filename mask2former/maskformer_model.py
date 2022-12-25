@@ -16,6 +16,8 @@ from detectron2.utils.memory import retry_if_cuda_oom
 from .modeling.criterion import SetCriterion
 from .modeling.matcher import HungarianMatcher
 
+import time
+import sys
 
 @META_ARCH_REGISTRY.register()
 class MaskFormer(nn.Module):
