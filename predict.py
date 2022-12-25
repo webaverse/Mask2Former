@@ -17,13 +17,14 @@ from detectron2.projects.deeplab import add_deeplab_config
 # import Mask2Former project
 from mask2former import add_maskformer2_config
 
+from typing import Any
 
-class Predictor(cog.Predictor):
+class Predictor(cog.BasePredictor):
     def setup(self):
         cfg = get_cfg()
         add_deeplab_config(cfg)
         add_maskformer2_config(cfg)
-        cfg.merge_from_file("Mask2Former/configs/coco/panoptic-segmentation/swin/maskformer2_swin_large_IN21k_384_bs16_100ep.yaml")
+        cfg.merge_from_file("configs/coco/panoptic-segmentation/swin/maskformer2_swin_large_IN21k_384_bs16_100ep.yaml")
         cfg.MODEL.WEIGHTS = 'model_final_f07440.pkl'
         cfg.MODEL.MASK_FORMER.TEST.SEMANTIC_ON = True
         cfg.MODEL.MASK_FORMER.TEST.INSTANCE_ON = True
@@ -32,13 +33,15 @@ class Predictor(cog.Predictor):
         self.coco_metadata = MetadataCatalog.get("coco_2017_val_panoptic")
 
 
-    @cog.input(
-        "image",
-        type=Path,
-        help="Input image for segmentation. Output will be the concatenation of Panoptic segmentation (top), "
-             "instance segmentation (middle), and semantic segmentation (bottom).",
-    )
-    def predict(self, image):
+#    @cog.input(
+#        "image",
+#        type=Path,
+#        help="Input image for segmentation. Output will be the concatenation of Panoptic segmentation (top), "
+#             "instance segmentation (middle), and semantic segmentation (bottom).",
+#    )
+    def predict(self,
+      image: cog.Path = cog.Input(description="img"),
+    ) -> Any:
         im = cv2.imread(str(image))
         outputs = self.predictor(im)
         v = Visualizer(im[:, :, ::-1], self.coco_metadata, scale=1.2, instance_mode=ColorMode.IMAGE_BW)
