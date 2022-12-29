@@ -1,0 +1,40 @@
+name: cw-depth
+'on':
+  push:
+    # - branch: []
+  pull_request:
+    # - branch: []
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+jobs:
+  deployment:
+    name: 'self-hosted'
+    runs-on: self-hosted
+    steps:
+      - name: Pull
+        working-directory: /home/ubuntu/Mask2Former
+        run: git pull
+      - name: Activate venv
+        run: conda activate mask2former
+      - name: Install dependencies
+        run: |
+          conda install pytorch==1.9.0 torchvision==0.10.0 cudatoolkit=11.1 -c pytorch -c nvidia
+          pip install -U opencv-python
+          pip install -r requirements.txt
+#       - name: Install detectron2 and deps
+#         working-directory: /home/ubuntu
+#         run: |
+#           git clone git@github.com:facebookresearch/detectron2.git
+#           cd detectron2
+#           pip install -e .
+#           pip install git+https://github.com/cocodataset/panopticapi.git
+#           pip install git+https://github.com/mcordts/cityscapesScripts.git
+      - name: Activate venv
+        run: conda activate mask2former
+      - name: Run app
+        run: python run app.py
+#       - name: Run app nohup
+#         run: nohup python run app.py >out.log 2>out.err < /dev/null &
