@@ -1,3 +1,3 @@
 #!/bin/bash
-conda actiavte mask2former
+conda activate mask2former
 nohup python app.py &
