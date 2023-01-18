@@ -223,6 +223,37 @@ def inference():
 	response.headers['X-Bounding-Boxes'] = json.dumps(bounding_boxes)
 	return response
 
+# serve api routes
+@app.route("/pointe", methods=["POST", "OPTIONS"])
+def pointe():
+    if (flask.request.method == "OPTIONS"):
+        # print("got options 1")
+        response = flask.Response()
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+        response.headers["Access-Control-Allow-Methods"] = "*"
+        response.headers["Access-Control-Expose-Headers"] = "*"
+        response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
+        response.headers["Cross-Origin-Embedder-Policy"] = "require-corp"
+        response.headers["Cross-Origin-Resource-Policy"] = "cross-origin"
+        # print("got options 2")
+        return response
+
+    # get body bytes
+    body = flask.request.get_data()
+
+    proxyRequest = requests.post("http://127.0.0.1:8000/pointe", data=body)
+    
+    # proxy the response content back to the client
+    response = flask.Response(proxyRequest.content)
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Headers"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "*"
+    response.headers["Access-Control-Expose-Headers"] = "*"
+    response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
+    response.headers["Cross-Origin-Embedder-Policy"] = "require-corp"
+    response.headers["Cross-Origin-Resource-Policy"] = "cross-origin"
+    return response
 
 if __name__ == '__main__':
 	app.run(host='0.0.0.0', port=8080, threaded=False)
